@@ -36,8 +36,8 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
         % Indicates whether to allow duplicate entries in the list
         AllowDuplicates  (1,1) matlab.lang.OnOffSwitchState = false
 
-        % Indicates whether to allow sort controls %RAJ - Future feature
-        %Sortable  (1,1) matlab.lang.OnOffSwitchState = true
+        % Indicates whether to allow sort controls
+        Sortable  (1,1) matlab.lang.OnOffSwitchState = true
 
         % Inidicates what to do when add button is pressed (select from
         % Items or custom using ButtonPushed event or ButtonPushedFcn)
@@ -117,7 +117,7 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
             % Configure grid
             obj.Grid.Padding = 3;
             obj.Grid.ColumnWidth = {'1x',25};
-            obj.Grid.RowHeight = {106,'1x'};
+            obj.Grid.RowHeight = {'fit','1x'};
 
             % Create the list buttons
             obj.ListButtons = wt.ButtonGrid(obj.Grid);
@@ -161,13 +161,23 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
             % What is selected?
             selIdx = obj.SelectedIndex;
 
+            % Is the list sortable?
+            if obj.Sortable
+                obj.ListButtons.Icon = ["add_24.png", "delete_24.png", "up_24.png", "down_24.png"];
+                obj.ListButtons.ButtonTag = ["Add", "Remove", "Up", "Down"];
+            else
+                obj.ListButtons.Icon = ["add_24.png", "delete_24.png"];
+                obj.ListButtons.ButtonTag = ["Add", "Remove"]; 
+            end
+            obj.ListButtons.ButtonHeight(:) = {25};
+
             % Update the list
             obj.ListBox.Items = obj.Items(selIdx);
             obj.ListBox.ItemsData = selIdx;
 
             % Update button enable states
             obj.updateEnables();
-
+            
         end %function
 
 
@@ -287,6 +297,12 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
                 newSelIdx = listdlg(...
                     "ListString",obj.Items,...
                     "InitialValue",obj.ListBox.ItemsData);
+            end
+
+            % Restore figure focus
+            fig = ancestor(obj,"figure");
+            if isscalar(fig) && isvalid(fig)
+                figure(fig)
             end
 
             if isempty(newSelIdx)
@@ -446,6 +462,9 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
             value = obj.ListBox.ItemsData;
         end
         function set.SelectedIndex(obj,value)
+            if ~obj.Sortable
+                value = sort(value);
+            end
             obj.ListBox.Items = obj.Items(value);
             obj.ListBox.ItemsData = value;
         end
