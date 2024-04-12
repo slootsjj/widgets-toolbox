@@ -45,7 +45,7 @@ classdef ButtonGrid < matlab.ui.componentcontainer.ComponentContainer & ...
     end %properties
 
 
-    properties (AbortSet, Dependent, UsedInUpdate = false)
+    properties (UsedInUpdate = false)
 
         % Width of the buttons
         ButtonWidth
@@ -163,6 +163,17 @@ classdef ButtonGrid < matlab.ui.componentcontainer.ComponentContainer & ...
 
         end %function
 
+        function updateGridForButton(obj, prop, value)
+            % Update main grid properties to value
+
+            if isscalar(value)
+                nCells = numel(obj.Grid.(prop));
+                value = repmat(value, 1, nCells);
+            end
+            obj.Grid.(prop) = value;
+            
+        end %function
+
 
         function onButtonPushed(obj,evt)
             % Triggered on button pushed
@@ -192,14 +203,14 @@ classdef ButtonGrid < matlab.ui.componentcontainer.ComponentContainer & ...
             value = obj.Grid.ColumnWidth;
         end
         function set.ButtonWidth(obj,value)
-            obj.Grid.ColumnWidth = value;
+            obj.updateGridForButton("ColumnWidth", value);
         end
 
         function value = get.ButtonHeight(obj)
             value = obj.Grid.RowHeight;
         end
         function set.ButtonHeight(obj,value)
-            obj.Grid.RowHeight = value;
+            obj.updateGridForButton("RowHeight", value);
         end
 
     end %methods
