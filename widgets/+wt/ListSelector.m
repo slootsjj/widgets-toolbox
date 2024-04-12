@@ -43,6 +43,12 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
         % Items or custom using ButtonPushed event or ButtonPushedFcn)
         AddSource (1,1) wt.enum.ListAddSource = wt.enum.ListAddSource.Items
 
+        % Width of the buttons
+        ButtonWidth = 25
+
+        % Height of the buttons
+        ButtonHeight = 25
+
     end %properties
 
 
@@ -58,15 +64,6 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
         HighlightedValue (1,:)
 
     end %properties
-
-
-    properties (AbortSet, Dependent, UsedInUpdate = false)
-
-        % Width of the buttons
-        ButtonWidth
-
-    end %properties
-
 
 
     %% Read-Only properties
@@ -116,7 +113,7 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
 
             % Configure grid
             obj.Grid.Padding = 3;
-            obj.Grid.ColumnWidth = {'1x',25};
+            obj.Grid.ColumnWidth = {'1x','fit'};
             obj.Grid.RowHeight = {'fit','1x'};
 
             % Create the list buttons
@@ -175,9 +172,15 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
             obj.ListBox.Items = obj.Items(selIdx);
             obj.ListBox.ItemsData = selIdx;
 
+            % Button width and height
+            obj.UserButtons.ButtonWidth = obj.ButtonWidth;
+            obj.ListButtons.ButtonWidth = obj.ButtonWidth;
+            obj.UserButtons.ButtonHeight = obj.ButtonHeight;
+            obj.ListButtons.ButtonHeight = obj.ButtonHeight;
+
             % Update button enable states
             obj.updateEnables();
-            
+
         end %function
 
 
@@ -511,13 +514,6 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
             else
                 [~, obj.ListBox.Value] = ismember(value, obj.ItemsData);
             end
-        end
-
-        function value = get.ButtonWidth(obj)
-            value = obj.Grid.ColumnWidth{2};
-        end
-        function set.ButtonWidth(obj,value)
-            obj.Grid.ColumnWidth{2} = value;
         end
 
     end %methods
