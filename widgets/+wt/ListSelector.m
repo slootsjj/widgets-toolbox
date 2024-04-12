@@ -183,6 +183,19 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
 
         end %function
 
+        function val = getMaximumValidItemsNumber(obj)
+            % Returns maximum valid selected index.
+            % Takes into account ItemsData and Items.
+
+            % Is ItemsData available?
+            if ~isempty(obj.ItemsData)
+                val = min(numel(obj.ItemsData), numel(obj.Items));
+            else
+                val = numel(obj.Items);
+            end
+
+        end %function
+
 
         function propGroups = getPropertyGroups(obj)
             % Override the ComponentContainer GetPropertyGroups with newly
@@ -336,12 +349,10 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
         function selIdx = getListBoxSelectedIndex(obj)
             % Get the current selected row indices in the listbox
 
-            warnState = warning('off','MATLAB:structOnObject');
-            s = struct(obj.ListBox);
-            warning(warnState);
-            selIdx = s.SelectedIndex;
-            if isequal(selIdx, -1)
+            if isempty(obj.ListBox.Value)
                 selIdx = [];
+            else
+                selIdx = find(ismember(obj.ListBox.ItemsData, obj.ListBox.Value));
             end
 
         end %function
@@ -463,11 +474,20 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
 
         function value = get.SelectedIndex(obj)
             value = obj.ListBox.ItemsData;
+            value(value > obj.getMaximumValidItemsNumber) = [];
         end
         function set.SelectedIndex(obj,value)
             if ~obj.Sortable
                 value = sort(value);
             end
+            if any(value > numel(obj.Items))
+                error("widgets:ListSelector:InvalidIndex",...
+                        "'SelectedIndex' must be within the length of the 'Items' property.")
+            end
+            if ~isempty(obj.ItemsData) && any(value > numel(obj.ItemsData))
+                error("widgets:ListSelector:InvalidIndex",...
+                        "'SelectedIndex' must be within the length of the 'ItemsData' property.")
+            end  
             obj.ListBox.Items = obj.Items(value);
             obj.ListBox.ItemsData = value;
         end
@@ -489,9 +509,17 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
                     [tf, selIdx] = ismember(value, obj.ItemsData);
                 end
                 if ~all(tf)
-                    warning("widgets:ListSelector:InvalidValue",...
-                        "Attempt to set an invalid Value to the list.")
-                    selIdx(~tf) = [];
+                    if isempty(obj.ItemsData)
+                        prop = 'Items';
+                    else
+                        prop = 'ItemsData';
+                    end
+                    error("widgets:ListSelector:InvalidValue",...
+                        "'Value' must be an element defined in the '%s' property.", prop)
+                end
+                if ~isempty(obj.ItemsData) && numel(tf) > numel(obj.Items)
+                    error("widgets:ListSelector:InvalidValue",...
+                        "'Value' must be an element defined in the 'ItemsData' property within the length of the 'Items' property.")
                 end
                 obj.SelectedIndex = selIdx;
             end
