@@ -92,6 +92,48 @@ classdef ListSelector < wt.test.BaseWidgetTest
             
         end %function
         
+
+        function testProgrammaticItemsAndItemsDataValueSelection(testCase)
+
+            % Get the RightList
+            listControl = testCase.Widget.ListBox;
+            
+            % Set fewer items than items data
+            testCase.verifySetProperty("Items", testCase.ItemNames(1:3) );
+            testCase.verifySetProperty("ItemsData", testCase.ItemData );
+            
+            % List should still be empty
+            testCase.verifyEmpty( listControl.Items );
+            
+            % Set the value outside of the current acceptable range
+            newSelIdx = [2 5];
+            newValue = testCase.ItemData(newSelIdx);
+            testCase.verifyError(@() testCase.verifySetProperty("Value", newValue), ...
+                "widgets:ListSelector:InvalidIndex");
+            
+            % Set the value inside range
+            newSelIdx = [1 2];
+            newValue = testCase.ItemData(newSelIdx);
+            testCase.verifySetProperty("Value", newValue);
+
+            % List and selection should now match value
+            testCase.verifyEqual(string(listControl.Items), testCase.ItemNames(newSelIdx));
+            testCase.verifyEqual(listControl.ItemsData, newSelIdx);
+            testCase.verifyEqual(testCase.Widget.SelectedIndex, newSelIdx);
+
+            % Set fewer items than items data
+            testCase.verifySetProperty("Items", testCase.ItemNames );
+            testCase.verifySetProperty("ItemsData", testCase.ItemData(1:3) );
+
+            % Set the value outside of the current acceptable range
+            newSelIdx = [2 5];
+            newValue = testCase.ItemData(newSelIdx);
+            testCase.verifyError(@() testCase.verifySetProperty("Value", newValue), ...
+                "widgets:ListSelector:InvalidValue");
+            
+            % Verify callback did not fire
+            testCase.verifyEqual(testCase.CallbackCount, 0);
+        end        
             
         
         function testHighlightedValue(testCase)
@@ -115,8 +157,7 @@ classdef ListSelector < wt.test.BaseWidgetTest
             
         end %function
         
-        
-            
+                    
         function testInteractiveSelection(testCase)
             
             % Get the listbox
@@ -145,8 +186,7 @@ classdef ListSelector < wt.test.BaseWidgetTest
             
         end %function
         
-        
-            
+                    
         function testButtonEnables(testCase)
             
             % Get the listbox and button grid
@@ -204,8 +244,7 @@ classdef ListSelector < wt.test.BaseWidgetTest
             
         end %function
         
-        
-            
+                    
         function testButtonFunctions(testCase)
             
             % Get the listbox and button grid
@@ -272,7 +311,54 @@ classdef ListSelector < wt.test.BaseWidgetTest
         end %function
         
         
+        function testSortable(testCase)
+
+            % Get the listbox and button grid
+            w = testCase.Widget;
+            listControl = testCase.Widget.ListBox;
+            buttonGrid = testCase.Widget.ListButtons;
+            button = buttonGrid.Button;
             
+            % Add a list of items and put all on list
+            testCase.verifySetProperty("Value", testCase.ItemNames);
+            
+            % Select multiple items with mouse
+            selIdx = [2 3];
+            testCase.choose(listControl, selIdx)
+            
+            % Check button enables
+            testCase.verifyEquality(buttonGrid.ButtonEnable, [0 1 1 1]);
+            
+            % Move items up
+            testCase.press(button(3))
+            
+            % Give a moment for update to run
+            drawnow
+
+            % Verify new order
+            newIdx = [2 3 1 4 5];
+            testCase.verifyEqual(w.Value, testCase.ItemNames(newIdx));
+            testCase.verifyEqual(w.SelectedIndex, newIdx);
+            
+            % Verify button enables
+            testCase.verifyEquality(buttonGrid.ButtonEnable, [0 1 0 1]);
+
+            % Set sortable
+            w.Sortable = false;
+
+            % Give a moment for update to run
+            drawnow
+
+            % Check new order
+            newIdx = 1:5;
+            testCase.verifyEqual(w.Value, testCase.ItemNames(newIdx));
+            testCase.verifyEqual(w.SelectedIndex, newIdx);
+
+            % Verify button enables
+            testCase.verifyEquality(buttonGrid.ButtonEnable(1:2), [0 1]);
+        end
+
+
         function testUserButtons(testCase)
             
             % Get the widget
@@ -290,12 +376,14 @@ classdef ListSelector < wt.test.BaseWidgetTest
             
         end %function
         
-        
-            
+                    
         function testStyleProperties(testCase)
             
             % Set ButtonWidth
             testCase.verifySetProperty("ButtonWidth", 40);
+
+            % Set ButtonHeight
+            testCase.verifySetProperty("ButtonHeight", 40);
             
             % Set ButtonWidth
             testCase.verifySetProperty("FontSize", 20);

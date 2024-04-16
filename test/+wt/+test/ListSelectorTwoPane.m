@@ -536,6 +536,9 @@ classdef ListSelectorTwoPane < wt.test.BaseWidgetTest
             
             % Set ButtonWidth
             testCase.verifySetProperty("ButtonWidth", 40);
+
+            % Set ButtonHeight
+            testCase.verifySetProperty("ButtonHeight", 40);
             
             % Set ButtonWidth
             testCase.verifySetProperty("FontSize", 20);
