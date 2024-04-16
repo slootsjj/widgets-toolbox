@@ -158,6 +158,11 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
             % What is selected?
             selIdx = obj.SelectedIndex;
 
+            % Update the list of choices
+            if ~obj.Sortable
+                selIdx = sort(selIdx);
+            end
+
             % Is the list sortable?
             if obj.Sortable
                 obj.ListButtons.Icon = ["add_24.png", "delete_24.png", "up_24.png", "down_24.png"];
@@ -166,7 +171,6 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
                 obj.ListButtons.Icon = ["add_24.png", "delete_24.png"];
                 obj.ListButtons.ButtonTag = ["Add", "Remove"]; 
             end
-            obj.ListButtons.ButtonHeight(:) = {25};
 
             % Update the list
             obj.ListBox.Items = obj.Items(selIdx);
