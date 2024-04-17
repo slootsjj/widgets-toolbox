@@ -38,10 +38,10 @@ classdef ListSelectorTwoPane < matlab.ui.componentcontainer.ComponentContainer &
         Sortable (1,1) matlab.lang.OnOffSwitchState = true
 
         % Width of the buttons
-        ButtonWidth = 25
+        ButtonWidth (1,1) double = 25
 
         % Height of the buttons
-        ButtonHeight = 25
+        ButtonHeight (1,1) double = 25
 
     end %properties
 

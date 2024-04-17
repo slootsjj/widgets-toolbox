@@ -44,10 +44,10 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
         AddSource (1,1) wt.enum.ListAddSource = wt.enum.ListAddSource.Items
 
         % Width of the buttons
-        ButtonWidth = 25
+        ButtonWidth (1,1) double = 25
 
         % Height of the buttons
-        ButtonHeight = 25
+        ButtonHeight (1,1) double = 25
 
     end %properties
 
