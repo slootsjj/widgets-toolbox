@@ -48,10 +48,10 @@ classdef ButtonGrid < matlab.ui.componentcontainer.ComponentContainer & ...
     properties (UsedInUpdate = false)
 
         % Width of the buttons
-        ButtonWidth
+        ButtonWidth = {'1x', '1x'}
 
         % Height of the buttons
-        ButtonHeight
+        ButtonHeight = {'1x'}
 
     end %properties
 
@@ -112,6 +112,13 @@ classdef ButtonGrid < matlab.ui.componentcontainer.ComponentContainer & ...
                 obj.EnableableComponents = obj.Button;
                 obj.ButtonColorableComponents = obj.Button;
 
+                % Set size for new buttons
+                if obj.Orientation == wt.enum.HorizontalVerticalState.horizontal
+                    obj.Grid.ColumnWidth(numOld+1:numNew) = obj.Grid.ColumnWidth(1);
+                else
+                    obj.Grid.RowHeight(numOld+1:numNew) = obj.Grid.RowHeight(1);
+                end
+
             elseif numOld > numNew
 
                 % Remove rows
@@ -163,14 +170,44 @@ classdef ButtonGrid < matlab.ui.componentcontainer.ComponentContainer & ...
 
         end %function
 
-        function updateGridForButton(obj, prop, value)
+        function updateGridForButton(obj, dim, value)
             % Update main grid properties to value
 
-            if isscalar(value)
-                nCells = numel(obj.Grid.(prop));
-                value = repmat(value, 1, nCells);
+            % Which size dimension?
+            switch lower(dim)
+                case "width"
+                    prop = "ColumnWidth";
+                case "height"
+                    prop = "RowHeight";
+                otherwise
+                    error("wt:OutOfRange", ...
+                        "Out of range for button size dimension '%s'.", ...
+                        dim)
             end
-            obj.Grid.(prop) = value;
+
+            % Any non-cell inputs?
+            if isstring(value)
+                value = convertStringsToChars(value);
+            end
+            if isnumeric(value) || ischar(value)
+                value = {value};
+            end
+
+            % AppDesinger uses cell arrays with char vectors for 
+            % button sizes. Numeric values are also represented as char 
+            % vectors.
+            numValue = cellfun(@str2double, value);
+            isNum = ~isnan(numValue);
+
+            % Any character numerics that should be converted to doubles?
+            if any(isNum)
+                value(isNum) = num2cell(numValue(isNum));
+            end
+
+            % Expand/crop size to grid elements
+            nCells = numel(obj.Grid.(prop));
+            value(end+1:nCells) = value(1);
+            obj.Grid.(prop) = value(1:nCells);
             
         end %function
 
@@ -200,17 +237,19 @@ classdef ButtonGrid < matlab.ui.componentcontainer.ComponentContainer & ...
     methods
 
         function value = get.ButtonWidth(obj)
+            obj.update();
             value = obj.Grid.ColumnWidth;
         end
         function set.ButtonWidth(obj,value)
-            obj.updateGridForButton("ColumnWidth", value);
+            obj.updateGridForButton("width", value);
         end
 
         function value = get.ButtonHeight(obj)
+            obj.update();
             value = obj.Grid.RowHeight;
         end
         function set.ButtonHeight(obj,value)
-            obj.updateGridForButton("RowHeight", value);
+            obj.updateGridForButton("height", value);
         end
 
     end %methods
