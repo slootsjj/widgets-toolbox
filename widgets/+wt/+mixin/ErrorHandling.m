@@ -32,8 +32,11 @@ classdef ErrorHandling < handle
             
             % Place in a dialog if possible
             if ~isempty(fig)
+                message = subEraseHtmlTags(message);
                 uialert(fig,message,title);
-            elseif isa(err,'MException')
+            end
+            
+            if isa(err,'MException')
                 err.throwAsCaller();
             else
                 error(message);
@@ -85,3 +88,14 @@ classdef ErrorHandling < handle
     
 end %classdef 
 
+%% Local functions
+
+function newTxt = subEraseHtmlTags(txt)
+%subEraseHtmlTags   Erase HTML tags from text
+%     newTxt = eraseTags(TXT) erases HTML comments and tags from the
+%     elements of STR.
+
+pat = '<[^>]*>';
+newTxt = regexprep(txt, pat, '');
+
+end
