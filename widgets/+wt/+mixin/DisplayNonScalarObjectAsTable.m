@@ -50,7 +50,7 @@ classdef (HandleCompatible) DisplayNonScalarObjectAsTable < matlab.mixin.CustomD
             % Populate cell with property values
             for pIdx = 1:numProps
                 thisProp = props(pIdx);
-                values(:,pIdx) = {obj.(thisProp)}';
+                values(:,pIdx) = arrayfun( @(x) x.(thisProp), obj, 'UniformOutput', false);
             end %for
             
             % Convert to table
