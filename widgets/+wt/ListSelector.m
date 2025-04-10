@@ -36,12 +36,18 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
         % Indicates whether to allow duplicate entries in the list
         AllowDuplicates  (1,1) matlab.lang.OnOffSwitchState = false
 
-        % Indicates whether to allow sort controls %RAJ - Future feature
-        %Sortable  (1,1) matlab.lang.OnOffSwitchState = true
+        % Indicates whether to allow sort controls
+        Sortable  (1,1) matlab.lang.OnOffSwitchState = true
 
         % Inidicates what to do when add button is pressed (select from
         % Items or custom using ButtonPushed event or ButtonPushedFcn)
         AddSource (1,1) wt.enum.ListAddSource = wt.enum.ListAddSource.Items
+
+        % Width of the buttons
+        ButtonWidth = 25
+
+        % Height of the buttons
+        ButtonHeight = 25
 
     end %properties
 
@@ -58,15 +64,6 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
         HighlightedValue (1,:)
 
     end %properties
-
-
-    properties (AbortSet, Dependent, UsedInUpdate = false)
-
-        % Width of the buttons
-        ButtonWidth
-
-    end %properties
-
 
 
     %% Read-Only properties
@@ -116,8 +113,8 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
 
             % Configure grid
             obj.Grid.Padding = 3;
-            obj.Grid.ColumnWidth = {'1x',25};
-            obj.Grid.RowHeight = {106,'1x'};
+            obj.Grid.ColumnWidth = {'1x','fit'};
+            obj.Grid.RowHeight = {'fit','1x'};
 
             % Create the list buttons
             obj.ListButtons = wt.ButtonGrid(obj.Grid);
@@ -161,12 +158,41 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
             % What is selected?
             selIdx = obj.SelectedIndex;
 
+            % Is the list sortable?
+            if obj.Sortable
+                obj.ListButtons.Icon = ["Add_24.png", "Delete_24.png", "Up_24.png", "Down_24.png"];
+                obj.ListButtons.ButtonTag = ["Add", "Remove", "Up", "Down"];
+            else
+                obj.ListButtons.Icon = ["Add_24.png", "Delete_24.png"];
+                obj.ListButtons.ButtonTag = ["Add", "Remove"]; 
+            end
+            obj.ListButtons.ButtonHeight(:) = {25};
+
             % Update the list
             obj.ListBox.Items = obj.Items(selIdx);
             obj.ListBox.ItemsData = selIdx;
 
+            % Button width and height
+            obj.UserButtons.ButtonWidth = obj.ButtonWidth;
+            obj.ListButtons.ButtonWidth = obj.ButtonWidth;
+            obj.UserButtons.ButtonHeight = obj.ButtonHeight;
+            obj.ListButtons.ButtonHeight = obj.ButtonHeight;
+
             % Update button enable states
             obj.updateEnables();
+
+        end %function
+
+        function val = getMaximumValidItemsNumber(obj)
+            % Returns maximum valid selected index.
+            % Takes into account ItemsData and Items.
+
+            % Is ItemsData available?
+            if ~isempty(obj.ItemsData)
+                val = min(numel(obj.ItemsData), numel(obj.Items));
+            else
+                val = numel(obj.Items);
+            end
 
         end %function
 
@@ -289,6 +315,12 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
                     "InitialValue",obj.ListBox.ItemsData);
             end
 
+            % Restore figure focus
+            fig = ancestor(obj,"figure");
+            if isscalar(fig) && isvalid(fig)
+                figure(fig)
+            end
+
             if isempty(newSelIdx)
                 % User cancelled
                 return
@@ -317,12 +349,10 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
         function selIdx = getListBoxSelectedIndex(obj)
             % Get the current selected row indices in the listbox
 
-            warnState = warning('off','MATLAB:structOnObject');
-            s = struct(obj.ListBox);
-            warning(warnState);
-            selIdx = s.SelectedIndex;
-            if isequal(selIdx, -1)
+            if isempty(obj.ListBox.Value)
                 selIdx = [];
+            else
+                selIdx = find(ismember(obj.ListBox.ItemsData, obj.ListBox.Value));
             end
 
         end %function
@@ -444,8 +474,20 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
 
         function value = get.SelectedIndex(obj)
             value = obj.ListBox.ItemsData;
+            value(value > obj.getMaximumValidItemsNumber) = [];
         end
         function set.SelectedIndex(obj,value)
+            if ~obj.Sortable
+                value = sort(value);
+            end
+            if any(value > numel(obj.Items))
+                error("widgets:ListSelector:InvalidIndex",...
+                        "'SelectedIndex' must be within the length of the 'Items' property.")
+            end
+            if ~isempty(obj.ItemsData) && any(value > numel(obj.ItemsData))
+                error("widgets:ListSelector:InvalidIndex",...
+                        "'SelectedIndex' must be within the length of the 'ItemsData' property.")
+            end  
             obj.ListBox.Items = obj.Items(value);
             obj.ListBox.ItemsData = value;
         end
@@ -467,9 +509,17 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
                     [tf, selIdx] = ismember(value, obj.ItemsData);
                 end
                 if ~all(tf)
-                    warning("widgets:ListSelector:InvalidValue",...
-                        "Attempt to set an invalid Value to the list.")
-                    selIdx(~tf) = [];
+                    if isempty(obj.ItemsData)
+                        prop = 'Items';
+                    else
+                        prop = 'ItemsData';
+                    end
+                    error("widgets:ListSelector:InvalidValue",...
+                        "'Value' must be an element defined in the '%s' property.", prop)
+                end
+                if ~isempty(obj.ItemsData) && numel(tf) > numel(obj.Items)
+                    error("widgets:ListSelector:InvalidValue",...
+                        "'Value' must be an element defined in the 'ItemsData' property within the length of the 'Items' property.")
                 end
                 obj.SelectedIndex = selIdx;
             end
@@ -492,13 +542,6 @@ classdef ListSelector < matlab.ui.componentcontainer.ComponentContainer & ...
             else
                 [~, obj.ListBox.Value] = ismember(value, obj.ItemsData);
             end
-        end
-
-        function value = get.ButtonWidth(obj)
-            value = obj.Grid.ColumnWidth{2};
-        end
-        function set.ButtonWidth(obj,value)
-            obj.Grid.ColumnWidth{2} = value;
         end
 
     end %methods
