@@ -42,7 +42,7 @@ classdef Login < wt.abstract.BaseInternalDialog
             % Add labels
             col = 1;
             startRow = 1;
-            obj.addRowLabels(["Username:","Password"], ...
+            obj.addRowLabels(["Username:","Password:"], ...
                 obj.Grid, col, startRow);
 
             % Add controls
