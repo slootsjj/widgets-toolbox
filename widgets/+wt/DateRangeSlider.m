@@ -446,7 +446,7 @@ classdef DateRangeSlider < wt.abstract.BaseWidget & ...
             % Triggered on slider moving
             
             % What changed the date?
-            changedDate = obj.Limits(1) + round(evt.Value);
+            changedDate = obj.Limits(1) + round(evt.Value - 1);
 
             % Update datepicker values
             obj.DatepickerLeft.Value = changedDate(1);
